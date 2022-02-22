@@ -1330,7 +1330,7 @@
                     nrad,ngs,lamgs,mugs, &
                     precip,th,prefn, z,thetan,rhoa,rhoan,w, &
     				micro_init,hm_flag, wr_flag, mass_ice, ice_flag, theta_flag, &
-    				j_stochastic,ice_nuc_flag,mode2_ice_flag, &
+    				j_stochastic,ice_nuc_flag,mode1_ice_flag,mode2_ice_flag, &
     				coll_breakup_flag1, heyms_west, lawson, recycle, calc_params)
 #else
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
