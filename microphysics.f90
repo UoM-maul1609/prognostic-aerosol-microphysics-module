@@ -556,7 +556,7 @@
                                 min(z(k),z_read(n_levels_s)), var,dummy)
                     n_aer1(i)=var
                     ! linear interp sig_aer
-                    call polu_int(z_read(iloc:iloc+1), sig_read(i,iloc:iloc+1), &
+                    call poly_int(z_read(iloc:iloc+1), sig_read(i,iloc:iloc+1), &
                                 min(z(k),z_read(n_levels_s)), var,dummy)
                     sig_aer1(i)=var
                     ! linear interp d_aer
