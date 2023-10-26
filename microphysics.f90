@@ -2553,53 +2553,51 @@
         endif
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ! Scale process rates so that cannot get negative values                         !
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        call scale_microphysics(praci(k),rraci(k), piacr(k), riacr(k), &
-            nin_c, nin_r, massc_nucc(k), massr_nucr(k), &
-            piacw(k), rihal(k), pidep(k), pisub(k), riaci(k), &
-            pimlt(k), prevp(k), praut(k), pracw(k), rcwacr(k), rraut(k), rrsel(k), &
-            rcwaut(k),rcwsel(k), q(k,inc),q(k,iqc),q(k,inr), q(k,iqr),q(k,ini),q(k,iqi),dt)
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        ! mode-1 SIP         
-        ! increase ice crystal number
-        q(k  ,ini)=q(k  ,ini)+nfrag_m1c(k)
-        ! increase ice crystal shape factor
-        q(k  ,iqi+1)=q(k  ,iqi+1)+nfrag_m1c(k)
-        ! increase ice crystal monomers
-        q(k  ,iqi+3)=q(k  ,iqi+3)+nfrag_m1c(k)
-
-        ! mode-2 SIP        
-        ! increase ice crystal number
-        q(k  ,ini)=q(k  ,ini)+nfrag_m2(k)
-        ! increase ice crystal shape factor
-        q(k  ,iqi+1)=q(k  ,iqi+1)+nfrag_m2(k)
-        ! increase ice crystal monomers
-        q(k  ,iqi+3)=q(k  ,iqi+3)+nfrag_m2(k)
         
-        ! ice-ice collisions
-        ! increase ice crystal number
-        q(k  ,ini)=q(k  ,ini)+nfrag_ii(k)
-        ! increase ice crystal shape factor
-        q(k  ,iqi+1)=q(k  ,iqi+1)+nfrag_ii(k)
-        ! increase ice crystal monomers
-        q(k  ,iqi+3)=q(k  ,iqi+3)+nfrag_ii(k)
+        if(ice_flag) then
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            ! Scale process rates so that cannot get negative values                     !
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            call scale_microphysics(praci(k),rraci(k), piacr(k), riacr(k), &
+                nin_c, nin_r, massc_nucc(k), massr_nucr(k), &
+                piacw(k), rihal(k), pidep(k), pisub(k), riaci(k), &
+                pimlt(k), prevp(k), praut(k), pracw(k), rcwacr(k), rraut(k), rrsel(k), &
+                rcwaut(k),rcwsel(k), &
+                q(k,inc),q(k,iqc),q(k,inr), q(k,iqr),q(k,ini),q(k,iqi),dt)
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            ! mode-1 SIP         
+            ! increase ice crystal number
+            q(k  ,ini)=q(k  ,ini)+nfrag_m1c(k)
+            ! increase ice crystal shape factor
+            q(k  ,iqi+1)=q(k  ,iqi+1)+nfrag_m1c(k)
+            ! increase ice crystal monomers
+            q(k  ,iqi+3)=q(k  ,iqi+3)+nfrag_m1c(k)
 
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ! Move aerosol based on process rates                                            !
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ! 1. aerosol from rain to ice due to collisions - done
-        ! 2. aerosol from cloud water to ice - nucleation - tonight
-        ! 3. aerosol from rain water to ice - nucleation - tonight
-        ! 4. if ice sublimates - put in to aerosol
-        ! 5. if liquid evaporates - put into aerosol
-        ! 6. if rain evaporates - put into aerosol
-        ! 7. if ice melts, put into rain
-        ! 8. riming, put liquid aerosol into ice
-        ! 4-6 add up total of pisub, liquidevp, prevp and partition into aerosol
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            ! mode-2 SIP        
+            ! increase ice crystal number
+            q(k  ,ini)=q(k  ,ini)+nfrag_m2(k)
+            ! increase ice crystal shape factor
+            q(k  ,iqi+1)=q(k  ,iqi+1)+nfrag_m2(k)
+            ! increase ice crystal monomers
+            q(k  ,iqi+3)=q(k  ,iqi+3)+nfrag_m2(k)
+        
+            ! ice-ice collisions
+            ! increase ice crystal number
+            q(k  ,ini)=q(k  ,ini)+nfrag_ii(k)
+            ! increase ice crystal shape factor
+            q(k  ,iqi+1)=q(k  ,iqi+1)+nfrag_ii(k)
+            ! increase ice crystal monomers
+            q(k  ,iqi+3)=q(k  ,iqi+3)+nfrag_ii(k)
+        else
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            ! Scale process rates so that cannot get negative values                     !
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            call scale_microphysics_warm(prevp(k), praut(k), &
+                pracw(k), rcwacr(k), rraut(k), rrsel(k), rcwaut(k),rcwsel(k), &
+                q(k,inc),q(k,iqc),q(k,inr), q(k,iqr),dt)
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!        
+        endif
+
 
 
 
@@ -3081,7 +3079,7 @@
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! do the riming here                                                             !
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        if((ice_flag.and.rm_flag).and.(q(k,iqc).ge.qsmall).or.(t(k).le.ttr)) then
+        if((ice_flag.and.rm_flag).and.((q(k,iqc).ge.qsmall).or.(t(k).le.ttr))) then
 
             dummy1=q(k,iqc)
             
@@ -4638,10 +4636,7 @@
         real(wp), intent(in) :: nc, qc, nr, qr, ni, qi,dt
 
 
-        real(wp) :: praci_n, rraci_n, piacr_n, riacr_n, nin_c_n, nin_r_n, &
-            piacw_n, rihal_n, pidep_n, pisub_n, riaci_n, pimlt_n, prevp_n, &
-            praut_n, pracw_n, rcwacr_n, rraut_n, rrsel_n, rcwsel_n, &
-            factor1, factor2, factor3, n_melt, n_sub
+        real(wp) :: factor1, factor2, factor3, n_melt, n_sub
 
         
         ! SCALING: 
@@ -4753,10 +4748,67 @@
                 rraci=0._wp
             endif
         endif    
-        
-        
-                
+               
     end subroutine scale_microphysics
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! Scale process rates so that cannot get negative values                             !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!>@author
+	!>Paul J. Connolly, The University of Manchester, 2023
+	!>@brief calculates ice nucleation and mode1
+	!>@param[in] nc, qc, nr, qr, dt
+	!>@param[inout] prevp, praut, pracw, &
+    !>        rcwaut, rcwacr, rraut, rrsel, rcwsel
+    subroutine scale_microphysics_warm(prevp, praut, pracw, rcwaut, rcwacr, rraut, rrsel, &
+        rcwsel, nc,qc,nr, qr,dt)
+        implicit none
+        real(wp), intent(inout) :: prevp, praut, pracw, &
+            rcwaut, rcwacr, rraut, rrsel, rcwsel
+        real(wp), intent(in) :: nc, qc, nr, qr, dt
+
+
+        real(wp) :: factor1, factor2, factor3
+        
+        ! 3.a scale liquid water mass sinks
+        factor1 = (praut+pracw)
+        if(factor1 .gt. 0._wp) then
+            factor2 = min(praut+pracw,qc/dt) / factor1
+            praut = praut*factor2
+            pracw = pracw*factor2
+        endif    
+        
+        ! 3.b scale liquid water number sinks
+        factor1 = rcwaut+rcwacr+rcwsel
+        if(factor1 .gt. 0._wp) then      
+            factor2 = min(factor1,nc/dt) / factor1
+            rcwaut = rcwaut*factor2
+            rcwacr = rcwacr*factor2
+            rcwsel = rcwsel*factor2
+        endif    
+        
+        ! 4.a scale rain water mass sinks
+        factor1 = (prevp)
+        if(factor1 .gt. 0._wp) then
+            factor2 = min(prevp,qr/dt) / factor1
+            prevp = prevp*factor2
+        endif    
+        
+        ! 4.b scale rain water number sinks
+        factor1 = rraut+rrsel
+        if(factor1 .gt. 0._wp) then    
+            factor3 = nr/dt-min(prevp*nr/(qr+qsmall),nr/dt)
+            if(factor3 .gt. 0._wp) then
+                factor2 = min(factor1,factor3) / factor1
+                rraut = rraut*factor2
+            else
+                prevp=qr/dt
+                rraut=0._wp
+            endif
+        endif    
+               
+    end subroutine scale_microphysics_warm
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4817,6 +4869,14 @@
     end subroutine move_aerosol_proportional
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! Move aerosol from one category to another based on size                            !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!>@author
+	!>Paul J. Connolly, The University of Manchester, 2023
+	!>@brief calculates ice nucleation and mode1
+	!>@param[in] n_mode, din_c, n_mix, sig_aer1, d_aer1, density_core1
+	!>@param[inout] n_aer_a, s_aer_a, m_aer_a, n_aer_b, s_aer_b, m_aer_b
     subroutine move_aerosol_larger_than_size(n_mode, &
                     din_c,n_mix, sig_aer1, d_aer1, density_core1, &
                     n_aer_a, s_aer_a, m_aer_a, &
