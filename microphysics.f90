@@ -2088,11 +2088,11 @@
     vnc(:)=max(fall_n_c*rho_fac * lam_c**(1._wp+alpha_c) / &
     	(lam_c+f_c)**(1._wp+alpha_c+b_c), 1.e-3_wp)
     ! coalescence efficiencies
-    egi_dry(1:kp)=0.2_wp*exp(0.08*(t(1:kp)-ttr))
-    egs_dry(1:kp)=0.2_wp*exp(0.08*(t(1:kp)-ttr))
-    esi(1:kp)=0.2_wp*exp(0.08*(t(1:kp)-ttr))
-    eii(1:kp)=0.2_wp*exp(0.08*(t(1:kp)-ttr))
-    ess(1:kp)=0.2_wp*exp(0.08*(t(1:kp)-ttr))
+    egi_dry(:)=0.2_wp*exp(0.08*(t(:)-ttr))
+    egs_dry(:)=0.2_wp*exp(0.08*(t(:)-ttr))
+    esi(:)=0.2_wp*exp(0.08*(t(:)-ttr))
+    eii(:)=0.2_wp*exp(0.08*(t(:)-ttr))
+    ess(:)=0.2_wp*exp(0.08*(t(:)-ttr))
     
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
@@ -4815,7 +4815,7 @@
         real(wp), intent(in) :: nc, qc, nr, qr, ni, qi,t,dt
 
 
-        real(wp) :: factor1, factor2, factor3, n_melt, n_sub
+        real(wp) :: factor1, factor2, factor3, n_melt, n_sub, n_left
 
         
         ! SCALING: 
@@ -4885,12 +4885,13 @@
             n_sub =  pisub * ni / (qi+qsmall)
             riaci = ni*(1._wp-exp(-riaci/ni*dt))/dt
             
-            factor3 = ni/dt-min(n_melt+n_sub+riacr,ni/dt)
+            n_left = ni-n_melt*dt-n_sub*dt
+            
+            factor1 = riaci+riacr
+            factor3 = min(factor1,n_left/dt)
             if(factor3 .gt.0._wp) then
-                factor1 = riaci
-                factor2 = min(factor1,factor3) / factor1
-                riaci = riaci*factor2
-                riacr = riacr*factor2
+                riaci = riaci*factor3/factor1
+                riacr = riacr*factor3/factor1
             else
                 riaci = 0._wp
                 riacr = 0._wp
