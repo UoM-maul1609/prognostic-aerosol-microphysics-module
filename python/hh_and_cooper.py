@@ -1,14 +1,19 @@
 import numpy as np
 from scipy import integrate
 import matplotlib.pyplot as plt
+import scipy.interpolate as scint 
+
 
 """
     Values to alter / update
 """
+visco = 1.75e-5  # visocity of air
+dtarget = 1.e-3 # size of ice target
 v_impact=1.0    # impact speed between drop and ice particle
 E=1.0           # collision efficiency, just use 1 for now - size independent
 C=0.16          # C parameter (see hh and cooper)
 T=-5.0          # temperature in deg C - determines HM coefficient
+rho_target = 100000./(T+273.15)/287. # density of air around ice target
 plot_flag=False # whether to generate figure of PSDs
 plot_fits=False # whether to generate figure of PSDs
 nPSD=2          # set to 1, 2, 3, or 4 - to do analysis of particular PSD
@@ -93,29 +98,32 @@ n=nPSD-1
 
 
 """
-	collision efficiency of small drops
-	! Long kernel for gravitational settling+++++++++
-	! AB Long, 1974
-	! Solutions to the Droplet Collection Equation for Polynomial Kernels
-	! https://doi.org/10.1175/1520-0469(1974)031<1040:STTDCE>2.0.CO;2	
+Loffler and Muhr (1972) 
 """
-def ecollision(dw,di):
-	x1=np.minimum(dw,di)
-	x2=np.maximum(dw,di)
-	as1=x1*0.5
-	al1=x2*0.5
-	
-	r=np.maximum(x2*0.5e6,x1*0.5e6) # microns
-	u = 4.0/3.0*np.pi*al1**3*1.e6    # cm^3
-	v = 4.0/3.0*np.pi*as1**3*1.e6    # cm^3
+def ecoll_lm(dw,di):
 
-	if(r <= 50):
-		ecoll=4.5e-4*r*r*(1.0-3.0/r)
-	else:
+	Re_t=v_impact*di*rho_target/visco
+	Re_t=np.maximum(np.minimum(500.,Re_t),50.)
+	# from L + M equations 14
+	f1=-0.0133*np.log(Re_t)+0.931
+	f2= 0.0353*np.log(Re_t)-0.36
+	f3=-0.0537*np.log(Re_t)+0.398
 	
-		ecoll=1.0
+	# trajectory parameter
+	phi1 = 1000.*dw**2*v_impact / (18.0*visco*di)
 	
-	return ecoll
+	# impact degree, equation 12
+	nab1 = phi1**3/(phi1**3+f1*phi1**2+f2*phi1+f3)
+	
+	# blocking term, equation 13
+	#nabsp=dw/di
+	nabsp=3*(2/Re_t*rho_target/1000*phi1)**0.5
+	
+	# total, equation 11
+	nabt=nab1+nabsp
+	
+	return nabt
+
 
 
 """
@@ -157,8 +165,25 @@ def g_func_hhc(x):
         f=N_DSD[n]/(x*np.sqrt(2.0*np.pi)*np.log(S_DSD[n]))* \
             np.exp(-np.log(x/D_DSD[n])**2/(2.0*np.log(S_DSD[n])**2))
     
-    E=ecollision(x,1e-3)
+    E=ecoll_lm(x,dtarget)
     return f*x**2/4.0*E
+
+"""
+    this is to do the integral for the number-riming rate
+"""
+def num_riming_rate(x):
+    if(n == 2):
+        f=N_DSD[n][0]/(x*np.sqrt(2.0*np.pi)*np.log(S_DSD[n][0]))* \
+            np.exp(-np.log(x/D_DSD[n][0])**2/(2.0*np.log(S_DSD[n][0])**2))
+        f=f+N_DSD[n][1]/(x*np.sqrt(2.0*np.pi)*np.log(S_DSD[n][1]))* \
+            np.exp(-np.log(x/D_DSD[n][1])**2/(2.0*np.log(S_DSD[n][1])**2))
+    else:
+        f=N_DSD[n]/(x*np.sqrt(2.0*np.pi)*np.log(S_DSD[n]))* \
+            np.exp(-np.log(x/D_DSD[n])**2/(2.0*np.log(S_DSD[n])**2))
+
+    E=ecoll_lm(x,dtarget)
+    
+    return f*(dtarget+x)**2/4.0*E*np.pi*v_impact
 
 """
     this is to do the integral for the mass-riming rate
@@ -173,9 +198,9 @@ def riming_rate(x):
         f=N_DSD[n]/(x*np.sqrt(2.0*np.pi)*np.log(S_DSD[n]))* \
             np.exp(-np.log(x/D_DSD[n])**2/(2.0*np.log(S_DSD[n])**2))
 
-    E=ecollision(x,1e-3)
+    E=ecoll_lm(x,dtarget)
     
-    return f*(1e-3+x)**2/4.0*E*np.pi*np.pi/6.0*x**3*1000.*v_impact
+    return f*(dtarget+x)**2/4.0*E*np.pi*np.pi/6.0*x**3*1000.*v_impact
 
 """
     this is to do the integral in HH and cooper, to calculate the SIP due to RS
@@ -200,9 +225,9 @@ def P_hhc(x,y,gR):
     
     f2=1.0 # f2 needs to be 1, because this is for one ice particle in the experiment
     
-    E=ecollision(x,1e-3)
+    E=ecoll_lm(x,dtarget)
     
-    P=C*f_hm(T)*gR*np.pi*(x+1.e-3)**2*v_impact*f2*f1*E/4.0 # note, there was a mistake here
+    P=C*f_hm(T)*gR*np.pi*(x+dtarget)**2*v_impact*f2*f1*E/4.0 # note, there was a mistake here
                 # I actually needed to divide by 4.
     return P
 
@@ -224,8 +249,8 @@ def P_hhc_s(x,gR):
     
     f2=1.0 # f2 needs to be 1, because this is for one ice particle in the experiment
     
-    E=ecollision(x,1e-3)
-    P=C*f_hm(T)*gR*np.pi*(x+1.e-3)**2*v_impact*f2*f1*E/4.0 # note, there was a mistake here
+    E=ecoll_lm(x,dtarget)
+    P=C*f_hm(T)*gR*np.pi*(x+dtarget)**2*v_impact*f2*f1*E/4.0 # note, there was a mistake here
                 # I actually needed to divide by 4.
     return P
 
@@ -239,11 +264,11 @@ if __name__=="__main__":
     
     
     # g13
-    G13=integrate.quad(g_func_hhc,0,13.e-6,epsabs=1.49e-20,epsrel=1.49e-20)
+    G13=integrate.quad(g_func_hhc,0,13.e-6,epsabs=1.49e-10,epsrel=1.49e-10)
     print('The G13 integrated over the PSD for n=' + str(n) + ' is ' + str(G13[0]))
     
     # gall
-    Gall=integrate.quad(g_func_hhc,0,1.e-3,epsabs=1.49e-20,epsrel=1.49e-20)
+    Gall=integrate.quad(g_func_hhc,0,1.e-3,epsabs=1.49e-10,epsrel=1.49e-10)
     print('The Gall integrated over the PSD for n=' + str(n) + ' is ' + str(Gall[0]))
     
     if allRime:
@@ -252,6 +277,10 @@ if __name__=="__main__":
         gR=G13[0]/Gall[0]
     print('Fraction of rime accreted of sizes less than 13 microns ' + str(gR))
     
+    # num-riming rate - 0 to 13 mm
+    Rime=integrate.quad(num_riming_rate,0,13.e-6,epsabs=1.49e-10,epsrel=1.49e-10)
+    print('The number riming rate integrated over the PSD for n=' + str(n) + ' is ' + str(Rime[0]*1e6))
+
     # riming rate - 0 to 1mm - an effective max
     Rime=integrate.quad(riming_rate,0,1.e-3,epsabs=1.49e-20,epsrel=1.49e-20)
     print('The riming rate integrated over the PSD for n=' + str(n) + ' is ' + str(Rime[0]))
