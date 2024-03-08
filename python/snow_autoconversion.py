@@ -19,7 +19,7 @@ def derivs(y, t, lambdaimin,ci,Dis, di, tsaut, mui, cs,ds):
 	# equation A7 in QJRMS, Field et al. (2023)
 	if (lami <= lambdaimin):
 		psaut = qi/tsaut * ((lambdaimin/lami)**di-1.0)
-		nsaut = psaut/(cs*Dis**ds)	
+		nsaut = psaut/(ci*Dis**di)	
 		niaut = psaut/(ci*Dis**di) #-nsaut #-psaut*ni/np.maximum(qi,1e-30)
 	else:
 		psaut=0.0
@@ -52,8 +52,8 @@ if __name__=="__main__":
 	cs=0.026
 	ds=2.0
 	
-	Dis = 50.0e-6		# this size that newly formed snow particles are
-	Dimax = 50.0e-6	# max average size of ice before converting to snow
+	Dis = 100.0e-6		# this size that newly formed snow particles are
+	Dimax = 100.0e-6	# max average size of ice before converting to snow
 	lambdaimin = (1.0 + mui +di)/ Dimax # corresponding lambda
 	
 	tsaut = 60.0	# autoconversion time-scale
