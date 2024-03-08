@@ -41,11 +41,14 @@ def derivs(y, t, lambdaimin,ci,Dis, di, tsaut, mui, cs,ds):
 
 if __name__=="__main__":
 	import matplotlib.pyplot as plt
+	import sys
 	
-	N=1000e3		# initial ice number concentration
-	Q=0.5e-3		# initial ice mixing ratio
+	old_um_flag = bool(distutils.util.strtobool(sys.argv[1]))
+# 	old_um_flag = True
+	N=10e3		# initial ice number concentration
+	Q=1.0e-3		# initial ice mixing ratio
 	
-	mui = 2.5		# shape parameter of ice
+	mui = 0.0		# shape parameter of ice
 	mus = 0.0		# shape parameter of snow
 	ci=200.0*np.pi/6.0	# mass dimension prefactor
 	di=3.0				# mass-dimension exponent
@@ -54,7 +57,12 @@ if __name__=="__main__":
 	
 	Dis = 100.0e-6		# this size that newly formed snow particles are
 	Dimax = 100.0e-6	# max average size of ice before converting to snow
-	lambdaimin = (1.0 + mui +di)/ Dimax # corresponding lambda
+	if old_um_flag:
+		Dimax = 50.0e-6	# max average size of ice before converting to snow
+		Dis = 50.0e-6	# max average size of ice before converting to snow
+		lambdaimin = (1.0 + mui)/ Dimax # corresponding lambda
+	else:
+		lambdaimin = (1.0 + mui +di)/ Dimax # corresponding lambda
 	
 	tsaut = 60.0	# autoconversion time-scale
 	
@@ -64,6 +72,7 @@ if __name__=="__main__":
 
 
 	plt.ion()
+	plt.figure()
 	qs=sol[:,0]
 	ns=sol[:,1]
 	qi=sol[:,2]
@@ -73,12 +82,43 @@ if __name__=="__main__":
 	lams = (cs*gamma(1.0 +mus+ ds)/gamma(1.0 + mus)* \
 		ns/np.maximum(qs,1.e-30))**(1.0/ds)
 	
+	if old_um_flag:
+		diam_ice=(1.0 + mui)/lami
+		diam_snow=(1.0 + mus)/lams
+	else:
+		diam_ice=(1.0 + mui + di)/lami
+		diam_snow=(1.0 + mus + ds)/lams
 	plt.subplot(211)
-	plt.plot(t, Dimax*np.ones(len(t)))
-	plt.plot(t, (1.0 + mui + di)/lami)
+	plt.plot(t, Dimax*np.ones(len(t))*1e6)
+	plt.plot(t, diam_ice*1e6)
+	plt.ylabel('$D_{ice}$ ($\mu$m)')
+	plt.xlabel('time (s)')
+	plt.legend(['Threshold to start auto','Actual ice diameter'])
+	if old_um_flag:
+		plt.title('Old UM')
+	else:
+		plt.title('New UM')
+	
 	
 	plt.subplot(212)
 	plt.plot(t, Dimax*np.ones(len(t)))
-	plt.plot(t, (1.0 + mus + ds)/lams)
+	plt.plot(t, diam_snow)
+	plt.ylabel('$D_{snow}$ ($\mu$m)')
+	plt.xlabel('time (s)')
+	plt.legend(['Threshold to start auto','Actual snow diameter'])
 	
-	
+	n0s=ns*lams**(1.0+mus)/gamma(1.0+mus)
+	zfactor = (6.0*cs/np.pi/1000.)**2*n0s*gamma(1.0+mus+2.0*ds) / \
+		lams**(1.0+mus+2.0*ds) / (1e-3**6)
+	if old_um_flag:
+		fig=plt.figure()
+		
+		plt.plot(t,np.log10( zfactor ))
+		#plt.plot(t,ns)
+	else:
+		plt.figure(fig)
+		plt.plot(t,np.log10( zfactor ),'--')
+		#plt.plot(t,ns,'--')
+		plt.legend(['old UM','new UM'])
+		plt.xlabel('t (s)')
+		plt.ylabel('Z')	
