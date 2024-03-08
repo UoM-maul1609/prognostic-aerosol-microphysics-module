@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.integrate import odeint
 from scipy.special import gamma
-
+import distutils
 
 """
 	this function calculates the autoconversion of ice to snow
@@ -101,8 +101,8 @@ if __name__=="__main__":
 	
 	
 	plt.subplot(212)
-	plt.plot(t, Dimax*np.ones(len(t)))
-	plt.plot(t, diam_snow)
+	plt.plot(t, Dimax*np.ones(len(t))*1e6)
+	plt.plot(t, diam_snow*1e6)
 	plt.ylabel('$D_{snow}$ ($\mu$m)')
 	plt.xlabel('time (s)')
 	plt.legend(['Threshold to start auto','Actual snow diameter'])
